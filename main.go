@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/csv"
 	"fmt"
 	"log"
 	"math"
@@ -68,6 +69,10 @@ func main() {
 	}
 	defer dictFile.Close()
 
+	csvWriter := csv.NewWriter(os.Stdout)
+	csvWriter.Comma = ';'
+	defer csvWriter.Flush()
+
 	scanner := bufio.NewScanner(indexFile)
 
 	for scanner.Scan() {
@@ -77,16 +82,16 @@ func main() {
 		offset := items[1]
 		length := items[2]
 
-		fmt.Println("---")
-		fmt.Println(headword)
-		fmt.Println(string(ReadBytes(dictFile, DecodeStr(offset), int64(DecodeStr(length)))))
+		bytes := ReadBytes(dictFile, DecodeStr(offset), int64(DecodeStr(length)))
+		value := strings.TrimSpace(string(bytes))
+
+		err := csvWriter.Write([]string{headword, value})
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
 	}
-
-	bs := ReadBytes(dictFile, 618037, 119)
-
-	fmt.Printf(string(bs))
 }
